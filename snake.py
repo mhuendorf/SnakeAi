@@ -4,6 +4,7 @@ import pygame as pg
 import random
 import renderer as rnd
 import board as brd
+from ai import ai
 
 BOARD_SIZE_X = 20
 BOARD_SIZE_Y = 20
@@ -12,17 +13,20 @@ SNAKE_BLOCK_SIZE = 20
 
 def game_loop(renderer: rnd.Renderer, board: brd.Board):
     clock = pg.time.Clock()
-    snake_speed = 20
+    snake_speed = 10
     game_over = False
     quit_game = False
     pause = False
     counter = 0
     last_direction = brd.Direction.RIGHT
     # pick a font you have and set its size
-    myfont = pg.font.SysFont("Comic Sans MS", int(SNAKE_BLOCK_SIZE * BOARD_SIZE_X / 6))
+    #myfont = pg.font.SysFont("Comic Sans MS", int(SNAKE_BLOCK_SIZE * BOARD_SIZE_X / 6))
     # apply it to text on a label
-    label = myfont.render("Game Over!", 1, (50, 0, 0))
+    #label = myfont.render("Game Over!", 1, (50, 0, 0))
+    route = []
     while not (quit_game or game_over):
+        if len(route) == 0:
+            route = board.wave_front()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 game_over = True
@@ -34,15 +38,22 @@ def game_loop(renderer: rnd.Renderer, board: brd.Board):
                 elif event.key == pg.K_SPACE:
                     pause = not pause
         if not pause:
+            new_direction = ai(board, route)
+            if len(route) != 0:
+                route.pop(0)
+            if new_direction is not None:
+                last_direction = new_direction
+            else:
+                print("müll")
             if not board.move(last_direction):
-                game_over = True
-            renderer.render_scene(board)
+                pause = True
+            renderer.render_scene(board, route)
             pg.display.update()
             counter += 1
         clock.tick(snake_speed)
     if (game_over):
         # put the label object on the screen at point x=100, y=100
-        renderer.dis.blit(label, (0, 0))
+        #renderer.dis.blit(label, (0, 0))
         pg.display.update()
         time.sleep(2)
     pg.quit()
@@ -68,7 +79,6 @@ def change_direction(to_change: brd.Direction, direction: brd.Direction) -> brd.
             return brd.Direction.UP
         if to_change == brd.Direction.DOWN:
             return brd.Direction.RIGHT
-
 
 
 if __name__ == "__main__":
